@@ -9,7 +9,7 @@ Vagrant.configure("2") do |config|
     v.memory = 8192
     v.cpus = 4
 
-    v.vmx["displayName"] = "OC Investigation VM - Win11"
+    v.vmx["displayName"] = "DFIR Investigation VM - Win11"
     v.force_vmware_license = "workstation"
   end
 
