@@ -1,0 +1,23 @@
+Vagrant.configure("2") do |win_config|
+  # Use a Windows 11 box that supports VMware
+  win_config.vm.box = "gusztavvargadr/windows-11" 
+  win_config.vm.box_version = ">= 0"
+
+  # Provider: VMware Workstation Pro
+  win_config.vm.provider "vmware_desktop" do |v|
+    v.gui = true
+    v.memory = 8192
+    v.cpus = 4
+
+    v.vmx["displayName"] = "DFIR Investigation VM - Win11"
+    v.force_vmware_license = "workstation"
+  end
+
+  # Set up communicator (Windows needs WinRM, not SSH)
+  win_config.vm.communicator = "winrm"
+
+  win_config.vm.provision "shell", path: "scripts/CreateEnvironment.ps1"
+  win_config.vm.provision "reload"
+  win_config.vm.provision "shell", path: "scripts/InstallChocolatey.ps1"
+  win_config.vm.provision "shell", path: "scripts/InstallTools.ps1"
+end

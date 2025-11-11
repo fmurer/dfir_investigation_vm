@@ -18,4 +18,9 @@ Before you can spin up the DFIR Investigation VM, please make sure that the foll
 * You have run the approperiate initialisation script (`scripts/Install_Prerequisites.[ps1|sh]`)
 
 ## Spin Up VMs
-In order to spin up the VM, simply run `vagrant up`
+In order to spin up the VM, copy the corresponding `Vagrantfile_*` to `Vagrantfile` and then run `vagrant up`.
+
+```bash
+cp Vagrantfile_Ubuntu_VM Vagrantfile
+vagrant up
+```

@@ -1,136 +1,37 @@
 ---
-- name: Prepare case environment
+- name: Install SIFT Environment
   hosts: all
   gather_facts: no
 
   tasks:
-    - name: Create {{ CASE_FOLDER }} folder
-      ansible.windows.win_file:
-        path: "{{ CASE_FOLDER }}"
-        state: directory
+    - name: Update Host 
+      ansible.builtin.apt:
+        update_cache: true
+        upgrade: full
+        autoremove: yes
 
-    - name: Create {{ TOOL_FOLDER }} folder
-      ansible.windows.win_file:
-        path: "{{ TOOL_FOLDER }}"
-        state: directory
+    - name: Install curl
+      ansible.builtin.apt:
+        name: curl
 
-    - name: Create symlink to CASE on Desktop
-      ansible.windows.win_powershell:
-        script: |
-          New-Item -ItemType SymbolicLink -Path "$env:USERPROFILE\Desktop\CASE" -Target "{{ CASE_FOLDER }}"
+    - name: Install jq
+      ansible.builtin.apt:
+        name: jq
 
-    - name: Create symlink to TOOLS on Desktop
-      ansible.windows.win_powershell:
-        script: |
-          New-Item -ItemType SymbolicLink -Path "$env:USERPROFILE\Desktop\TOOLS" -Target "{{ TOOL_FOLDER }}"
+    - name: Get Latest Cast Version
+      ansible.builtin.shell: |
+        curl -s https://api.github.com/repos/ekristen/cast/releases/latest | jq -r '.tag_name'
+      register: cast_version
 
-    - name: Set CH Keyboard
-      ansible.windows.win_powershell:
-        script: |
-          Set-WinUserLanguageList -Force "de-ch"
+    - name: Download Latest Cast Version
+      ansible.builtin.get_url:
+        url: "https://github.com/ekristen/cast/releases/download/{{ cast_version }}/cast-{{ cast_version }}-linux-amd64.deb"
+        dest: "/tmp/cast_{{ cast_version }}.deb"
 
-    - name: Set Timezone to UTC
-      ansible.windows.win_powershell:
-        script: |
-          Set-TimeZone -Id "UTC"
+    - name: Install Cast
+      ansible.builtin.shell: |
+        dpkg -i /tmp/cast_{{ cast_version }}.deb
 
-    - name: Prevent VM from going to sleep
-      ansible.windows_win_powershell:
-        script: |
-          Powercfg /Change standby-timeout-ac 0
-          Powercfg /Change standby-timeout-dc 0
-
-- name: Install TOOLS
-  hosts: all
-  gather_facts: no
-
-  tasks:
-    - name: Install Chocolatey
-      ansible.windows.win_powershell:
-        script: |
-          [Environment]::SetEnvironmentVariable("ChocolateyInstall", "{{ TOOL_FOLDER }}\chocolatey")
-          Set-ExecutionPolicy Bypass -Scope Process -Force; 
-          [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; 
-          iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'));
-
-    - name: Copy Tool Collection Config to VM
-      ansible.windows.win_copy:
-        src: resources/forensic_tools.config
-        dst: C:\Windows\Temp\forensic_tools.config
-      
-    - name: Install Chocolatey TOOLS
-      ansible.windows.win_powershell:
-        script: |
-          choco install C:\Windows\Temp\forensic_tools.config --yes
-
-    - name: Install KAPE
-      ansible.windows.win_powershell:
-        script: |
-          $kape_target_file = "C:\Windows\Temp\kape.zip"
-          $kape_download_link = "https://bit.ly/2Ei31Ga"
-          IWR -Uri $kape_download_link -OutFile $kape_target_file -ErrorAction:Stop
-          Expand-Archive -Path $kape_target_file -DestinationPath "{{ TOOL_FOLDER }}\" -Force
-          rm $kape_target_file
-
-    - name: Install Hayabusa 
-      ansible.windows.win_powershell:
-        script: |
-          mkdir -p "{{ TOOL_FOLDER }}\hayabusa"
-          $hayabusa_target_file = "C:\Windows\Temp\hayabusa.zip"
-          $hayabusa_download_link = "https://github.com/Yamato-Security/hayabusa/releases/download/v{{ HAYABUSA_VERSON }}/hayabusa-{{ HAYABUSA_VERSON }}-win-x64.zip"
-          IWR -Uri $hayabusa_download_link -OutFile $hayabusa_target_file -ErrorAction:Stop -UseBasicParsing
-          Expand-Archive -Path $hayabusa_target_file -DestinationPath "{{ TOOL_FOLDER }}\hayabusa"
-          rm $hayabusa_target_file
-
-    - name: Install EZ Tools
-      ansible.windows.win_powershell:
-        script: |
-          mkdir -p "{{ TOOL_FOLDER }}\ericzimmerman"
-          $ez_target_file = "C:\Windows\Temp\ez.zip"
-          $ez_download_link = "https://download.ericzimmermanstools.com/Get-ZimmermanTools.zip"
-          IWR -Uri $ez_download_link -OutFile $ez_target_file -ErrorAction:Stop
-          Expand-Archive -Path $ez_target_file -DestinationPath "{{ TOOL_FOLDER }}\ericzimmerman" -Force
-          cd "{{ TOOL_FOLDER }}\ericzimmerman"
-          & "{{ TOOL_FOLDER }}\ericzimmerman\Get-ZimmermanTools.ps1"
-          rm $ez_target_file
-
-    - name: Install SysInternal Suite
-      ansible.windows_win_powershell:
-        script: |
-          mkdir -p "{{ TOOL_FOLDER }}\sysinternals"
-          $sys_target_file = "C:\Windows\Temp\sys.zip"
-          $sys_download_link = "https://download.sysinternals.com/files/SysinternalsSuite.zip"
-          IWR -Uri $sys_download_link -OutFile $sys_target_file -ErrorAction:Stop
-          Expand-Archive -Path $sys_target_file -DestinationPath "{{ TOOL_FOLDER }}\sysinternals" -Force
-          rm $sys_target_file
-
-    - name: Install NirLauncher
-      ansible.windows.win_powershell:
-        script: |
-          mkdir -p "{{ TOOL_FOLDER }}\nirsoft"
-          $nir_target_file = "C:\Windows\Temp\nir.zip"
-          $nir_download_link = "https://download.nirsoft.net/nirsoft_package_enc_1.30.20.zip"
-          IWR -Uri $nir_download_link -OutFile $nir_target_file -ErrorAction:Stop  -Headers @{ "Referer" = "https://launcher.nirsoft.net/" }
-          7z.exe x $nir_target_file -p"nirsoft9876$" -o"{{ TOOL_FOLDER }}\nirsoft" -y
-          rm $nir_target_file
-
-    - name: Download FTK Installer
-      ansible.windows.win_powershell:
-        script: |
-          mkdir -p "{{ TOOL_FOLDER }}\ftkimager"
-          $ftk_target_file = "{{ TOOL_FOLDER }}\ftkimager\ftk_installer.exe"
-          $ftk_download_link = "https://d1kpmuwb7gvu1i.cloudfront.net/Imgr/4.7.3.81%20Release/Exterro_FTK_Imager_%28x64%29-4.7.3.81.exe"
-          IWR -Uri $ftk_download_link -OutFile $ftk_target_file -ErrorAction:Stop
-
-    - name: Cleanup / Move Shortcuts to {{ TOOL_FOLDER }}
-      ansible.windows.win_powershell:
-        script: |
-          mv "C:\Users\Public\Desktop\Libre*.lnk" "{{ TOOL_FOLDER }}\"
-          mv "C:\Users\Public\Desktop\Thunderbird.lnk" "{{ TOOL_FOLDER }}\"
-          mv "C:\Users\Public\Desktop\Visual Studio Code.lnk" "{{ TOOL_FOLDER }}\"
-          mv "C:\Users\Public\Desktop\Firefox.lnk" "{{ TOOL_FOLDER }}\"
-          mv "C:\Users\vagrant\Desktop\Tor*.lnk" "{{ TOOL_FOLDER }}\"
-          cp "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Notepad*.lnk" "{{ TOOL_FOLDER }}\"
-          cp "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Wireshark.lnk" "{{ TOOL_FOLDER }}\"
-          cp "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Sublime*.lnk" "{{ TOOL_FOLDER }}\"
-          New-Item -ItemType SymbolicLink -Path "{{ TOOL_FOLDER }}\ArsenalImageMounter.lnk" -Target "{{ TOOL_FOLDER }}\chocolatey\bin\ArsenalImageMounter.exe"
+    - name: Install SIFT
+      ansible.builtin.shell: |
+        cast install teamdfir/sift-saltstack
