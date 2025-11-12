@@ -2,7 +2,7 @@ $TOOL_FOLDER="C:/TOOLS/"
 $HAYABUSA_VERSION="3.6.0"
 
 # Choco Tools
-choco install C:/vagrant/ansible/resources/forensic_tools.config --yes
+choco install C:/vagrant/resources/forensic_tools.config --yes
 
 # KAPE
 $kape_target_file = "C:\Windows\Temp\kape.zip"

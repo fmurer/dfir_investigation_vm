@@ -8,7 +8,7 @@ Currently, only the following versions are supported:
 |--------------|------------------|
 |Virtualisation|VMware Workstation|
 |Host OS|Windows, Ubuntu|
-|DFIR VM|Windows 11|
+|DFIR VM|Windows 11, Ubuntu|
 
 
 ## Prerequisites
