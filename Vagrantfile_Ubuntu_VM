@@ -15,14 +15,5 @@ Vagrant.configure("2") do |lin_config|
     v.force_vmware_license = "workstation"
   end
 
-  # Check the host system
-  host_os = RbConfig::CONFIG['host_os']
-
-  if host_os =~ /linux/
-    lin_config.vm.provision "ansible" do |ansible|
-      ansible.playbook = "ansible/playbook.yml"
-    end
-  elsif host_os =~ /mswin|mingw|cygwin/
-    lin_config.vm.provision "shell", path: "scripts/install_sift.sh"
-  end
+  lin_config.vm.provision "shell", path: "scripts/install_sift.sh"
 end
