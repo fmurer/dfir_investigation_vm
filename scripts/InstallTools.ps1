@@ -40,7 +40,7 @@ rm $sys_target_file
 # Nirlauncher
 mkdir -p "$TOOL_FOLDER\nirsoft"
 $nir_target_file = "C:\Windows\Temp\nir.zip"
-$nir_download_link = "https://download.nirsoft.net/nirsoft_package_enc_1.30.20.zip"
+$nir_download_link = "https://download.nirsoft.net/nirsoft_package_enc_1.30.22.zip"
 IWR -Uri $nir_download_link -OutFile $nir_target_file -ErrorAction:Stop  -Headers @{ "Referer" = "https://launcher.nirsoft.net/" }
 7z.exe x $nir_target_file -p"nirsoft9876$" -o"$TOOL_FOLDER\nirsoft" -y
 rm $nir_target_file
